@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app">
+    <h1>{{detail.title}}</h1>
+    <div v-for="(item, index) in titleItems" :key="index">
+      <h3>{{item.title}}</h3>
+      <div v-if="index<listMovieInTitles.length" class="list-movie" :class="{khamPha: index === 3}">
+        <div v-for="(t_item, t_index) in listMovieInTitles[index]" :key="t_index">
+          <img :src="t_item.image" alt="" />
+          <p>{{t_item.title}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+  <script>
+    var app = new Vue({
+      el: '#app',
+      data: {
+        homeApi: "https://dev-api.fbox.fpt.vn/foxytv/home/get_lane/v1/vi/B8FFB303FFE8/0/0/0/0/0/?pf=10&fw=1.0.0&chipset=tizen&st=hqWajCcuqSfaTOiCL0qBnw&expires=91957457191&pf=11",
+        titleApi: "https://dev-api.fbox.fpt.vn/foxytv/home/get_item_group/v1/vi/B8FFB303FFE8/SGH068460/2708512/91/2708512/12345678?pf=0&fw=3.3.3&chipset=8640B",
+        detail: {},
+        titleItems: [],
+        listMovieInTitles: [],
+      },
+      methods: {
+        getAPI: async function (url) {
+          var result = await fetch(url, {
+            method: 'POST',
+          })
+            .then(response => response.json())
+            .then(json => {
+              return json;
+            })
+            .catch(error => {
+              return null;
+            });
+          return result;
+        },
+        getAPIPost: async function (url, m_json) {
+          var result = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            },
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            timeout: 5000, //request timeout,
+            body: m_json,
+          })
+            .then(response => response.json())
+            .then(json => {
+              return json;
+            })
+            .catch(error => console.log('Authorization failed : ' + error.message));
+          return result;
+        }
+      },
+      created() {
+        var self = this;
+        async function main() {
+          var dataHomeMenu = await self.getAPI(self.homeApi);
+          self.detail = dataHomeMenu.detail;
+          self.titleItems = dataHomeMenu.items;
+
+          var listIdTitles = self.titleItems.map(value => {
+            return value.id;
+          })
+
+          var listJSON = listIdTitles.map(value => {
+            var myJSONObject = {
+              "index": "0",
+              "pagesize": "20",
+              "lane_id": value,
+              "is_topic": "0"
+            };
+            return JSON.stringify(myJSONObject);
+          })
+
+
+
+          // self.listMovieInTitles = listJSON.map(value => {
+          //   var result = self.getAPIPost(self.titleApi, value);
+          //   return result.items;
+          // });
+
+          // console.log(self.listMovieInTitles)
+
+          for (let index = 0; index < listJSON.length; index++) {
+
+            var result = await self.getAPIPost(self.titleApi, listJSON[index]);
+            if (result != null)
+              self.listMovieInTitles.push(result.items);
+          }
+          console.log(self.listMovieInTitles)
+
+
+
+        };
+        main();
+
+
+        //-----
+
+      }
+    })
+  </script>
+</body>
+
+<style>
+  .list-movie {
+    display: flex;
+    margin: 10px 0;
+  }
+
+  .list-movie div {
+    width: 145px;
+    height: 280px;
+    margin: 5px 17px;
+  }
+
+  .list-movie img {
+    width: 145px;
+    height: 212px;
+  }
+
+  .list-movie div {
+    width: 270px;
+    height: 230;
+  }
+
+  .khamPha img {
+    width: 270px;
+    height: 160px;
+  }
+</style>
+
+</html
